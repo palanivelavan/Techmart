@@ -1,0 +1,93 @@
+body {
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    background: #f5f6fa;
+    color: #1a1a2e
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 24px;
+    background: #1a1a2e;
+    color: #fff
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px
+}
+
+button {
+    cursor: pointer;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 14px;
+    background: #e4e7f1
+}
+
+button.active,
+button.primary {
+    background: #4f46e5;
+    color: #fff
+}
+
+input,
+select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 16px
+}
+
+.card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 2px 8px #0001;
+    text-align: center
+}
+
+.emoji {
+    font-size: 56px
+}
+
+.price {
+    font-weight: 700;
+    margin: 6px 0 10px
+}
+
+.cart {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 24px
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee
+}
+
+.qty {
+    display: flex;
+    gap: 8px;
+    align-items: center
+}
