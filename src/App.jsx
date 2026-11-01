@@ -1,68 +1,92 @@
-// DAY 2: useEffect & Custom Hooks (async loading + debounced search)
-import { useState, useEffect } from "react";
+import { createContext, useContext, useReducer } from "react";
 import { PRODUCTS, CATEGORIES } from "./products";
+import { useState } from "react";
 import "./styles.css";
 
-// Custom hook: delays updating a value until the user stops typing
-function useDebounce(value, delay = 400) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t); // cleanup
-  }, [value, delay]);
-  return debounced;
+function cartReducer(state, action) {
+  switch (action.type) {
+    case "ADD": {
+      const exists = state.find((i) => i.id === action.item.id);
+      return exists
+        ? state.map((i) => (i.id === exists.id ? { ...i, qty: i.qty + 1 } : i))
+        : [...state, { ...action.item, qty: 1 }];
+    }
+    case "DEC":
+      return state.map((i) => (i.id === action.id ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0);
+    case "REMOVE":
+      return state.filter((i) => i.id !== action.id);
+    case "CLEAR":
+      return [];
+    default:
+      return state;
+  }
 }
 
-// Fake API call
-const fetchProducts = () => new Promise((res) => setTimeout(() => res(PRODUCTS), 800));
+// ---- Context ----
+const CartContext = createContext();
+function CartProvider({ children }) {
+  const [cart, dispatch] = useReducer(cartReducer, []);
+  return <CartContext.Provider value={{ cart, dispatch }}>{children}</CartContext.Provider>;
+}
+const useCart = () => useContext(CartContext); // custom hook
 
-function ProductCard({ product, onAdd }) {
+// ---- Components ----
+function Navbar() {
+  const { cart } = useCart();
+  return <div className="nav"><h2>⚡ TechMart</h2><span>🛒 {cart.reduce((s, i) => s + i.qty, 0)}</span></div>;
+}
+
+function ProductCard({ product }) {
+  const { dispatch } = useCart();
   return (
     <div className="card">
       <div className="emoji">{product.emoji}</div>
       <h3>{product.name}</h3>
       <p className="price">₹{product.price.toLocaleString("en-IN")}</p>
-      <button className="primary" onClick={() => onAdd(product)}>Add to cart</button>
+      <button className="primary" onClick={() => dispatch({ type: "ADD", item: product })}>Add to cart</button>
+    </div>
+  );
+}
+
+function Cart() {
+  const { cart, dispatch } = useCart();
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  return (
+    <div className="cart">
+      <h2>Your Cart</h2>
+      {cart.length === 0 && <p>Cart is empty</p>}
+      {cart.map((i) => (
+        <div className="row" key={i.id}>
+          <span>{i.emoji} {i.name}</span>
+          <div className="qty">
+            <button onClick={() => dispatch({ type: "DEC", id: i.id })}>−</button>
+            {i.qty}
+            <button onClick={() => dispatch({ type: "ADD", item: i })}>+</button>
+            <button onClick={() => dispatch({ type: "REMOVE", id: i.id })}>✕</button>
+          </div>
+        </div>
+      ))}
+      <h3>Total: ₹{total.toLocaleString("en-IN")}</h3>
+      {cart.length > 0 && <button className="primary" onClick={() => dispatch({ type: "CLEAR" })}>Checkout</button>}
     </div>
   );
 }
 
 export default function App() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("All");
-  const [search, setSearch] = useState("");
-  const [cartCount, setCartCount] = useState(0);
-  const debouncedSearch = useDebounce(search);
-
-  useEffect(() => {
-    fetchProducts().then((data) => { setProducts(data); setLoading(false); });
-  }, []); // runs once on mount
-
-  useEffect(() => {
-    document.title = `TechMart (${cartCount})`;
-  }, [cartCount]);
-
-  const visible = products
-    .filter((p) => category === "All" || p.category === category)
-    .filter((p) => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
-
+  const visible = category === "All" ? PRODUCTS : PRODUCTS.filter((p) => p.category === category);
   return (
-    <>
-      <div className="nav"><h2>⚡ TechMart</h2><span>🛒 {cartCount}</span></div>
+    <CartProvider>
+      <Navbar />
       <div className="container">
         <div className="toolbar">
-          <input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
           {CATEGORIES.map((c) => (
             <button key={c} className={c === category ? "active" : ""} onClick={() => setCategory(c)}>{c}</button>
           ))}
         </div>
-        {loading ? <p>Loading products...</p> : visible.length === 0 ? <p>No products found 😕</p> : (
-          <div className="grid">
-            {visible.map((p) => <ProductCard key={p.id} product={p} onAdd={() => setCartCount((n) => n + 1)} />)}
-          </div>
-        )}
+        <div className="grid">{visible.map((p) => <ProductCard key={p.id} product={p} />)}</div>
+        <Cart />
       </div>
-    </>
+    </CartProvider>
   );
 }
